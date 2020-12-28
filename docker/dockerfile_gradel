@@ -3,7 +3,7 @@ FROM registry.redhat.io/openshift4/ose-jenkins-agent-maven
 
 MAINTAINER Osa Ora
 
-ENV GRADLE_VERSION=6.8
+ENV GRADLE_VERSION=6.8-rc-4
 
 USER root
 
