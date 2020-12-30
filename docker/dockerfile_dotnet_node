@@ -9,11 +9,7 @@ ENV SONARQUBE_SCANNER_VERSION=4.4.2.1543 \
 RUN rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
 
 # Install headless Java and .NET sdk
-RUN yum install -y centos-release-scl-rh && \
-    INSTALL_PKGS="wget dotnet-sdk-3.1" && \
-    yum install -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
-    rpm -V $INSTALL_PKGS && \
-    yum clean all
+RUN sudo yum install dotnet-sdk-3.1 -y
 
 WORKDIR /
 
