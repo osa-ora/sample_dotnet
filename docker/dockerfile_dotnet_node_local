@@ -2,8 +2,7 @@ FROM image-registry.openshift-image-registry.svc:5000/openshift/jenkins-agent-no
 
 USER root
 
-ENV SONARQUBE_SCANNER_VERSION=4.4.2.1543 \
-    HOME=/home/jenkins 
+HOME=/home/jenkins 
 
 # Install .NET sdk rpm
 RUN rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
