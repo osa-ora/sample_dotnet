@@ -2,7 +2,7 @@ FROM image-registry.openshift-image-registry.svc:5000/openshift/jenkins-agent-no
 
 USER root
 
-HOME=/home/jenkins 
+ENV HOME=/home/jenkins 
 
 # Install .NET sdk rpm
 RUN rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
