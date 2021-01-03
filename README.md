@@ -142,6 +142,8 @@ oc expose svc ${app_name} --port=8080 --name=${app_name}
 ```
 This will make sure our project initally deployed and ready for our CI/CD configurations, where proj_name and app_name is Openshift project and application name respectively.
 
+<img width="906" alt="Screen Shot 2021-01-03 at 18 51 22" src="https://user-images.githubusercontent.com/18471537/103484483-c1494f00-4df7-11eb-9841-bdaa8537f225.png">
+
 You can enrich the project and add approvals to deploy to differnet environments as well, all you need is to have the privilages using "oc policy" as we did before and add deploy stage in the pipeline step.
 
 
