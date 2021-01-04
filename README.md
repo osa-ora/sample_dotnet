@@ -28,8 +28,8 @@ oc create -f bc_jenkins_slave_template.yaml -n cicd //this will add the template
 or you can use it directly from the GitHub: oc process -f https://raw.githubusercontent.com/osa-ora/sample_dotnet/main/cicd/bc_jenkins_slave_template.yaml -n cicd | oc create -f -
 
 Now use the template to create the Jenkins slave template
-oc describe template jenkins-slave //to see the template details
-oc process -p GIT_URL=https://github.com/osa-ora/sample_dotnet -p GIT_BRANCH=main -p GIT_CONTEXT_DIR=cicd -p DOCKERFILE_PATH=dockerfile_dotnet_node -p IMAGE_NAME=jenkins-dotnet-slave jenkins-slave | oc create -f -
+oc describe template jenkins-slave-template //to see the template details
+oc process -p GIT_URL=https://github.com/osa-ora/sample_dotnet -p GIT_BRANCH=main -p GIT_CONTEXT_DIR=cicd -p DOCKERFILE_PATH=dockerfile_dotnet_node -p IMAGE_NAME=jenkins-dotnet-slave jenkins-slave-template | oc create -f -
 
 oc start-build jenkins-dotnet-slave 
 oc logs bc/jenkins-dotnet-slave -f
