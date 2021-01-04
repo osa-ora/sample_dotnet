@@ -18,11 +18,6 @@ You can run use the build :
 
 ```
 oc project cicd //this is the project for cicd
-oc project dev //this is project for application development
-
-oc new-app jenkins-persistent  -n cicd
-oc policy add-role-to-user edit system:serviceaccount:cicd:default -n dev
-oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
 
 oc create -f bc_jenkins_slave_template.yaml -n cicd //this will add the template to use 
 or you can use it directly from the GitHub: oc process -f https://raw.githubusercontent.com/osa-ora/sample_dotnet/main/cicd/bc_jenkins_slave_template.yaml -n cicd | oc create -f -
@@ -33,6 +28,13 @@ oc process -p GIT_URL=https://github.com/osa-ora/sample_dotnet -p GIT_BRANCH=mai
 
 oc start-build jenkins-dotnet-slave 
 oc logs bc/jenkins-dotnet-slave -f
+
+oc new-app jenkins-persistent  -n cicd
+
+oc project dev //this is project for application development
+oc policy add-role-to-user edit system:serviceaccount:cicd:default -n dev
+oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
+
 ```
 
 
