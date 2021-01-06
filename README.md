@@ -200,3 +200,58 @@ And then configure any additonal cluster (other than the default one which runni
 
 <img width="1400" alt="Screen Shot 2021-01-05 at 10 24 45" src="https://user-images.githubusercontent.com/18471537/103623100-4b043400-4f40-11eb-90cf-2209e9c4bde2.png">
 
+## 6) Copy Container Images
+In case you need to copy container images between different Openshift clusters, you can use Skopeo command to do this.
+The easiest way is to copy the container to Quay.io repository and then import it.
+
+In the docker folder you can see a Skopeo Jenkins slave image where you can use it to execute the copy command. Here is the steps that you need to do this:
+
+From Quay Side:
+1. Create Quay.io account and repository for example test repository
+2. Create a Robot account in the respository with efficient permission e.g. read/write.   
+From Openshift Side:  
+3. Create Skopeo Jenkins slave image:
+```
+oc process -p GIT_URL=https://github.com/osa-ora/sample_dotnet -p GIT_BRANCH=main -p GIT_CONTEXT_DIR=docker -p DOCKERFILE_PATH=dockerfile_skopeo -p IMAGE_NAME=jenkins-slave-skopeo jenkins-slave-template | oc create -f -
+```
+Make sure this new image exist in Jenkins Pod Templates as we did before.  
+4. Create User with enough privilages to pull the image for example skopeo user and get the token of this user
+You can use either image-puller or image-builder based on the required use case
+```
+oc create serviceaccount skopeo
+oc adm policy add-role-to-user system:image-puller -n cicd system:serviceaccount:cicd:skopeo
+oc adm policy add-role-to-user system:image-builder -n cicd system:serviceaccount:cicd:skopeo
+oc describe secret skopeo-token -n cicd
+```
+You can also use any user with privilage to do this.  
+5. Run Jenkins pipleline in that Skopeo slave to execute the copy command:
+```
+pipeline {
+    agent {
+       // Using the skopeo agent
+       label "jenkins-slave-skopeo"
+    }
+    stages {
+      stage('Copy Image To Quay') {
+        steps {
+          sh "skopeo copy docker://image-registry.openshift-image-registry.svc:5000/${ocp_img_name} docker://quay.io/${quay_repo} --src-tls-verify=false --src-creds='${ocp_id}' --dest-creds ${quay_id}"
+        }
+      }
+      stage('Copy Image From Quay') {
+        steps {
+          sh "skopeo copy docker://quay.io/${quay_repo} docker://image-registry.openshift-image-registry.svc:5000/${ocp_img_name} --dest-tls-verify=false --format=v2s2 --src-creds='${quay_id}' --dest-creds ${ocp_id}"
+        }
+      }
+    }
+}
+```
+Where the following parameters are supplie for example:
+```
+quay_repo is the quay repository 
+quay_id is the robot account:token granted access to Quay repository
+ocp_img_name is the name of the image in OCP
+ocp_id is username:token of user with privilages to pull/push image in OCP
+```
+Note that I used the flag srv-tls-verify=false and dest-tls-verity=false with OCP as in my environment it uses self signed certificate otherwise it will fail.  
+Note also in case you encounter any issues in format versions you can use the flag "--format=v2s2"
+
