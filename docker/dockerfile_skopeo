@@ -1,4 +1,4 @@
-FROM image-registry.openshift-image-registry.svc:5000/openshift/jenkins-agent-maven
+FROM FROM openshift/jenkins-slave-base-centos7
 
 MAINTAINER Osa Ora
 
