@@ -4,7 +4,7 @@ MAINTAINER Osa Ora
 
 USER root
 
-RUN yum -y install podman skopeo && \
+RUN yum -y install skopeo && \
     yum update -y && \
     yum clean all && \
     rm -rf /var/cache/yum
