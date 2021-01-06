@@ -253,5 +253,6 @@ ocp_img_name is the name of the image in OCP
 ocp_id is username:token of user with privilages to pull/push image in OCP
 ```
 Note that I used the flag srv-tls-verify=false and dest-tls-verity=false with OCP as in my environment it uses self signed certificate otherwise it will fail.  
-Note also in case you encounter any issues in format versions you can use the flag "--format=v2s2"
+Note also in case you encounter any issues in format versions you can use the flag "--format=v2s2"  
+More details here: https://github.com/nmasse-itix/OpenShift-Examples/blob/master/Using-Skopeo/README.md
 
