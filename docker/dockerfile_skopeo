@@ -1,0 +1,9 @@
+FROM image-registry.openshift-image-registry.svc:5000/openshift/jenkins-agent-maven
+
+MAINTAINER Osa Ora
+
+USER root
+
+RUN yum install skopeo
+
+USER 1001
