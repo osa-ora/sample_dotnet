@@ -20,6 +20,8 @@ RUN apt-get update \
 
 RUN apt update \
   && apt-get install -y wget \
+  && apt-get install -y curl \
+  && apt-get install -y unzip \
   && rm -rf /var/lib/apt/lists/*
   
 RUN wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
