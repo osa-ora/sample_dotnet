@@ -55,7 +55,7 @@ WORKDIR /azp
 COPY ./start.sh .
 RUN chmod +x start.sh
 
-RUN chmod -R 1029:0 start.sh
+RUN chmod 1029:0 start.sh
 RUN chown -R 1029:0 /usr/local/bin && \
     chown -R 1029:0 ~/ && \
     chmod -R g+rwx ~
