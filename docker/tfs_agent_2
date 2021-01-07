@@ -38,6 +38,9 @@ ENV PATH="${PATH}:~/.dotnet/tools"
 RUN apt install default-jre \
     && apt install openjdk-11-jre-headless
 
+RUN apt install nodejs
+RUN apt install npm
+
 ENV GRADLE_VERSION=6.8-rc-4
 
 RUN curl -skL -o /tmp/gradle-bin.zip https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip && \
