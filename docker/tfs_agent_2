@@ -50,7 +50,7 @@ RUN curl -skL -o /tmp/gradle-bin.zip https://services.gradle.org/distributions/g
     unzip -q /tmp/gradle-bin.zip -d /opt/gradle && \
     ln -sf /opt/gradle/gradle-$GRADLE_VERSION/bin/gradle /usr/local/bin/gradle
 ENV GRADLE_USER_HOME="/tmp"
-mkdir -p /.sonar
+RUN mkdir -p /.sonar
 ENV SONAR_USER_HOME="/.sonar"
 
 WORKDIR /azp
