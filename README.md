@@ -237,6 +237,13 @@ pipeline {
           sh "skopeo copy docker://image-registry.openshift-image-registry.svc:5000/${ocp_img_name} docker://quay.io/${quay_repo} --src-tls-verify=false --src-creds='${ocp_id}' --dest-creds ${quay_id}"
         }
       }
+      stage('Approval to Proceed?'){
+        steps {
+            timeout(time: 5, unit: 'MINUTES') {
+                input message: 'Proceed with Update Image?', ok: 'Approve Update'
+            }
+        }
+      }
       stage('Copy Image From Quay') {
         steps {
           sh "skopeo copy docker://quay.io/${quay_repo} docker://image-registry.openshift-image-registry.svc:5000/${ocp_img_name} --dest-tls-verify=false --format=v2s2 --src-creds='${quay_id}' --dest-creds ${ocp_id}"
