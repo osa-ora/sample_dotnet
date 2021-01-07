@@ -68,7 +68,7 @@ RUN chown -R 1029:0 $DOTNET_CLI_HOME
 RUN chown -R 1029:0 $SONAR_USER_HOME
 RUN chown -R 1001:0 /opt/gradle && \
     chmod -R g+rw /opt/gradle
-RUN chown -R /.local    
+RUN chown -R 1001:0 /.local    
 USER 1029
 
 CMD ["./start.sh"]
