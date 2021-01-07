@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-USER root
+#USER root
 
 # To make it easier for build and release pipelines to run apt-get,
 # configure apt to not require confirmation (assume the -y argument by default)
@@ -26,7 +26,7 @@ RUN apt update \
   && apt-get install -y unzip \
   && rm -rf /var/lib/apt/lists/*
   
-ENV DOTNET_CLI_HOME=/tmp/.dotnet
+#ENV DOTNET_CLI_HOME=/tmp/.dotnet
 
 RUN wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 RUN dpkg -i packages-microsoft-prod.deb
@@ -36,8 +36,10 @@ RUN apt-get update; \
   apt-get update && \
   apt-get install -y dotnet-sdk-3.1
 
-RUN dotnet tool install dotnet-sonarscanner --tool-path $DOTNET_CLI_HOME/tools
-ENV PATH="${PATH}:$DOTNET_CLI_HOME:$DOTNET_CLI_HOME/tools"
+#RUN dotnet tool install dotnet-sonarscanner --tool-path $DOTNET_CLI_HOME/tools
+RUN dotnet tool install dotnet-sonarscanner --global
+#ENV PATH="${PATH}:$DOTNET_CLI_HOME:$DOTNET_CLI_HOME/tools"
+ENV PATH="${PATH}:~/.dotnet/tools"
 
 RUN apt install default-jre \
     && apt install openjdk-11-jre-headless
@@ -54,21 +56,21 @@ RUN curl -skL -o /tmp/gradle-bin.zip https://services.gradle.org/distributions/g
 ENV GRADLE_USER_HOME="/tmp"
 RUN mkdir -p /tmp/.sonar
 ENV SONAR_USER_HOME="/tmp/.sonar"
-RUN mkdir /.local
+#RUN mkdir /.local
 WORKDIR /azp
 
 COPY ./start.sh .
 RUN chmod +x start.sh
 
-RUN chown -R 1029:0 start.sh
-RUN chown -R 1029:0 /usr/local/bin
-RUN chown -R 1029:0 /azp
-RUN chmod -R 777 $DOTNET_CLI_HOME
-RUN chown -R 1029:0 $DOTNET_CLI_HOME
-RUN chown -R 1029:0 $SONAR_USER_HOME
-RUN chown -R 1001:0 /opt/gradle && \
-    chmod -R g+rw /opt/gradle
-RUN chown -R 1001:0 /.local    
-USER 1029
+#RUN chown -R 1029:0 start.sh
+#RUN chown -R 1029:0 /usr/local/bin
+#RUN chown -R 1029:0 /azp
+#RUN chmod -R 777 $DOTNET_CLI_HOME
+#RUN chown -R 1029:0 $DOTNET_CLI_HOME
+#RUN chown -R 1029:0 $SONAR_USER_HOME
+#RUN chown -R 1001:0 /opt/gradle && \
+#    chmod -R g+rw /opt/gradle
+#RUN chown -R 1001:0 /.local    
+#USER 1029
 
 CMD ["./start.sh"]
