@@ -28,8 +28,8 @@ RUN apt update \
   
 #ENV DOTNET_CLI_HOME=/tmp/.dotnet
 
-RUN wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-RUN dpkg -i packages-microsoft-prod.deb
+RUN wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb
 
 RUN apt-get update; \
   apt-get install -y apt-transport-https && \
@@ -44,8 +44,8 @@ ENV PATH="${PATH}:~/.dotnet/tools"
 RUN apt install default-jre \
     && apt install openjdk-11-jre-headless
 
-RUN apt install nodejs
-RUN apt install npm
+RUN apt install nodejs \
+   && apt install npm
 
 ENV GRADLE_VERSION=6.7.1
 
@@ -53,6 +53,7 @@ RUN curl -skL -o /tmp/gradle-bin.zip https://services.gradle.org/distributions/g
     mkdir -p /opt/gradle && \
     unzip -q /tmp/gradle-bin.zip -d /opt/gradle && \
     ln -sf /opt/gradle/gradle-$GRADLE_VERSION/bin/gradle /usr/local/bin/gradle
+
 ENV GRADLE_USER_HOME="/tmp"
 RUN mkdir -p /tmp/.sonar
 ENV SONAR_USER_HOME="/tmp/.sonar"
