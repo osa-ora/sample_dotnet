@@ -259,6 +259,8 @@ quay_id is the robot account:token granted access to Quay repository
 ocp_img_name is the name of the image in OCP
 ocp_id is username:token of user with privilages to pull/push image in OCP
 ```
+<img width="425" alt="Screen Shot 2021-01-07 at 16 18 20" src="https://user-images.githubusercontent.com/18471537/103903345-7768ad80-5104-11eb-9939-4cd488dcccee.png">
+
 Note that I used the flag srv-tls-verify=false and dest-tls-verity=false with OCP as in my environment it uses self signed certificate otherwise it will fail.  
 Note also in case you encounter any issues in format versions you can use the flag "--format=v2s2"  
 More details here: https://github.com/nmasse-itix/OpenShift-Examples/blob/master/Using-Skopeo/README.md. 
