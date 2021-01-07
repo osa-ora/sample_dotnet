@@ -57,6 +57,7 @@ RUN chmod +x start.sh
 
 RUN chown -R 1029:0 start.sh
 RUN chown -R 1029:0 /usr/local/bin
+RUN chown -R 1029:0 /azp
 USER 1029
 
 CMD ["./start.sh"]
