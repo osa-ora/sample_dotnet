@@ -59,6 +59,9 @@ RUN chown -R 1029:0 start.sh
 RUN chown -R 1029:0 /usr/local/bin
 RUN chown -R 1029:0 /azp
 RUN chown -R 1029:0 ~/.dotnet
+RUN chown -R 1001:0 /opt/gradle && \
+    chmod -R g+rw /opt/gradle
+    
 USER 1029
 
 CMD ["./start.sh"]
