@@ -10,18 +10,16 @@ pool:
   name: 'Default'
 
 steps:
-- script: cd Tests
-  displayName: 'dotnet test'
-
 - script: echo 'start pipeline'
   displayName: 'Run a one-line script'
 
 - script: |
     cd Tests
     dotnet test
+    cd ..
     rm -R Tests
-    dotnet build
     dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
     dotnet build
     dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
+    dotnet build
   displayName: 'Run a multi-line script'
