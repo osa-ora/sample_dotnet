@@ -70,7 +70,4 @@ RUN chown -R 1001:0 /opt/gradle && \
     
 USER 1029
 
-RUN dotnet tool install dotnet-sonarscanner --global
-ENV PATH="${PATH}:~/.dotnet/tools"
-
 CMD ["./start.sh"]
