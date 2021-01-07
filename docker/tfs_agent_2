@@ -37,8 +37,8 @@ RUN apt-get update; \
   apt-get update && \
   apt-get install -y dotnet-sdk-3.1
 
-RUN dotnet tool install --global dotnet-sonarscanner
-ENV PATH="${PATH}:~/.dotnet/tools"
+RUN dotnet tool install --global dotnet-sonarscanner tool-path ${DOTNET_CLI_HOME}/tools
+ENV PATH="${PATH}:${DOTNET_CLI_HOME}/tools"
 
 RUN apt install default-jre \
     && apt install openjdk-11-jre-headless
@@ -64,8 +64,8 @@ RUN chmod +x start.sh
 RUN chown -R 1029:0 start.sh
 RUN chown -R 1029:0 /usr/local/bin
 RUN chown -R 1029:0 /azp
-RUN chmod -R 777 /tmp/.dotnet
-RUN chown -R 1029:0 /tmp/.dotnet
+RUN chmod -R 777 ${DOTNET_CLI_HOME}
+RUN chown -R 1029:0 ${DOTNET_CLI_HOME}
 RUN chown -R 1029:0 /tmp/.sonar
 RUN chown -R 1001:0 /opt/gradle && \
     chmod -R g+rw /opt/gradle
