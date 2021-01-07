@@ -1,5 +1,7 @@
 FROM ubuntu:18.04
 
+USER root
+
 # To make it easier for build and release pipelines to run apt-get,
 # configure apt to not require confirmation (assume the -y argument by default)
 ENV DEBIAN_FRONTEND=noninteractive
@@ -52,5 +54,12 @@ WORKDIR /azp
 
 COPY ./start.sh .
 RUN chmod +x start.sh
+
+RUN chmod -R 1029:0 start.sh
+RUN chown -R 1029:0 /usr/local/bin && \
+    chown -R 1029:0 ~/ && \
+    chmod -R g+rwx ~
+
+USER 1029
 
 CMD ["./start.sh"]
