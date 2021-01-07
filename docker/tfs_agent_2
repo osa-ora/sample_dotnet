@@ -36,6 +36,11 @@ ENV PATH="${PATH}:$HOME/.dotnet/tools"
 RUN apt install default-jre \
     && apt install openjdk-11-jre-headless
 
+RUN curl -skL -o /tmp/gradle-bin.zip https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip && \
+    mkdir -p /opt/gradle && \
+    unzip -q /tmp/gradle-bin.zip -d /opt/gradle && \
+    ln -sf /opt/gradle/gradle-$GRADLE_VERSION/bin/gradle /usr/local/bin/gradle
+
 WORKDIR /azp
 
 COPY ./start.sh .
