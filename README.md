@@ -5,8 +5,8 @@ This Project Handle the basic CI/CD of DotNet application
 To run locally with DotNet installed:   
 
 ```
+dotnet test Tests --logger trx 
 dotnet build
-dotnet test 
 dotnet run
 ```
 
@@ -83,7 +83,7 @@ pipeline {
     }
     stage('Unit Testing') {
       steps {
-        sh "dotnet test ${unit_tests_folder}"
+        sh "dotnet test ${unit_tests_folder} --logger trx"
         sh "ls -l ${unit_tests_folder}"
         sh "ls -l ${unit_tests_folder}/TestResults"
         sh "rm -R ${unit_tests_folder}"
