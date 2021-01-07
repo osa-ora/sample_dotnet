@@ -1,0 +1,27 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: cd Tests
+  displayName: 'dotnet test'
+
+- script: echo 'start pipeline'
+  displayName: 'Run a one-line script'
+
+- script: |
+    cd Tests
+    dotnet test
+    rm -R Tests
+    dotnet build
+    dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    dotnet build
+    dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
+  displayName: 'Run a multi-line script'
