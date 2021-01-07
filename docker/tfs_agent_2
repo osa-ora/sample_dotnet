@@ -47,7 +47,7 @@ RUN apt install default-jre \
 RUN apt install nodejs
 RUN apt install npm
 
-ENV GRADLE_VERSION=6.8-rc-4
+ENV GRADLE_VERSION=6.7.1
 
 RUN curl -skL -o /tmp/gradle-bin.zip https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip && \
     mkdir -p /opt/gradle && \
