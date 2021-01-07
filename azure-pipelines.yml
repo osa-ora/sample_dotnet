@@ -11,9 +11,10 @@ pool:
 
 steps:
 - script: echo 'start pipeline'
-  displayName: 'Run a one-line script'
-steps:
+  displayName: 'Run a Pipeline'
+
 - script: dotnet test Tests --logger trx
+  displayName: 'Run Test Cases'
 - task: PublishTestResults@2
   condition: succeededOrFailed()
   inputs:
