@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:19.10
 
 # To make it easier for build and release pipelines to run apt-get,
 # configure apt to not require confirmation (assume the -y argument by default)
@@ -18,10 +18,13 @@ RUN apt-get update \
         netcat \
         libssl1.0
 
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-RUN apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod
-RUN apt-get update
-RUN apt-get install dotnet-sdk-3.1
+RUN curl https://packages.microsoft.com/config/ubuntu/19.10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+RUN dpkg -i packages-microsoft-prod.deb
+
+sudo apt-get update; \
+  sudo apt-get install -y apt-transport-https && \
+  sudo apt-get update && \
+  sudo apt-get install -y dotnet-sdk-3.1
 
 WORKDIR /azp
 
