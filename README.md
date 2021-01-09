@@ -29,7 +29,7 @@ oc process -p GIT_URL=https://github.com/osa-ora/sample_dotnet -p GIT_BRANCH=mai
 oc start-build jenkins-dotnet-slave 
 oc logs bc/jenkins-dotnet-slave -f
 
-oc new-app jenkins-persistent  -n cicd
+oc new-app jenkins-persistent  -p MEMORY_LIMIT=2Gi  -p VOLUME_CAPACITY=4Gi -n cicd
 
 oc project dev //this is project for application development
 oc policy add-role-to-user edit system:serviceaccount:cicd:default -n dev
