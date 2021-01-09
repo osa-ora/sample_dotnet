@@ -26,4 +26,4 @@ steps:
     dotnet build
     dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
     dotnet build
-  displayName: 'Run a multi-line script'
+  displayName: 'Build and scan the application ..'
