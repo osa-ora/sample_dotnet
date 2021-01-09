@@ -266,3 +266,65 @@ Note also in case you encounter any issues in format versions you can use the fl
 More details here: https://github.com/nmasse-itix/OpenShift-Examples/blob/master/Using-Skopeo/README.md. 
 Also this useful one: https://github.com/RedHat-EMEA-SSA-Team/skopeo-ubi
 
+
+## 7) Using Azure DevOps as CI/CD with Openshift Compute
+In case you already have Azure DevOps platform and you need to use Openshift as compute power and deployment target for your application, you can configure this easily by doing the following steps:
+
+1- Get Azure URL, and Personal Access Token.  
+2- Create Agent Pool e.g. ocp_pool
+
+<img width="382" alt="Screen Shot 2021-01-09 at 14 45 53" src="https://user-images.githubusercontent.com/18471537/104092058-25519480-528a-11eb-8f37-2d008daf4540.png">
+
+3- Create the Openshift project and grant root execution for this project as the agent template run as a root and still some work required to make it secrure compliant with Openshift (run as non-root user)
+```
+oc new-project agent
+oc adm policy add-scc-to-user anyuid -z default
+```
+4- Build the Agent Image on OCP using the template: bc_tfs_agent.yaml where you need to supply the following info:
+```
+oc create -f https://raw.githubusercontent.com/osa-ora/sample_dotnet/main/docker/bc_tfs_agent.yaml
+
+oc process -p GIT_URL=https://github.com/osa-ora/sample_dotnet -p GIT_BRANCH=main -p GIT_CONTEXT_DIR=docker -p DOCKERFILE_PATH=tfs_agent -p IMAGE_NAME=tfs-agent -p AGENT_NAME=myagent -p AZURE_URL=azure_url_here -p AZURE_TOKEN=token_here -p AZURE_POOL=ocp_pool  tfs-agent-template  | oc create -f -
+
+```
+Note: once the image is built, you can use the other template file: docker/bc_tfs_agent_local.yaml and populate the image stream configuration and other agent details.  
+5- Once the Pod is up and running it will auto regster itself in Azure DevOps.
+
+<img width="694" alt="Screen Shot 2021-01-09 at 14 45 35" src="https://user-images.githubusercontent.com/18471537/104092045-0a7f2000-528a-11eb-86a8-981ce5a971d6.png">
+
+6- Create a new pipeline in Azure DevOps.  
+Note: You need to edit sonar qube settings or remove them if you don't have one.
+```
+trigger:
+- main
+
+pool:
+  name: 'ocp_pool'
+
+steps:
+- script: echo 'start pipeline'
+  displayName: 'Run a Pipeline'
+
+- script: dotnet test Tests --logger trx
+  displayName: 'Run Test Cases'
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testRunner: VSTest
+    testResultsFiles: '**/*.trx'
+- script: |
+    rm -R Tests
+    dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    dotnet build
+    dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
+    dotnet build
+  displayName: 'Build and scan the application ..'
+```
+7- Run Azure DevOps Pipeline
+You'll see in the agent logs that it pick the job and execute it, and you will see in Azure DevOpe the pipleine exeuction:
+
+<img width="666" alt="Screen Shot 2021-01-09 at 14 50 11" src="https://user-images.githubusercontent.com/18471537/104092075-39959180-528a-11eb-96a9-6dad39037f91.png">
+
+You can also see the published test results:
+
+<img width="1344" alt="Screen Shot 2021-01-09 at 14 59 47" src="https://user-images.githubusercontent.com/18471537/104092247-5aaab200-528b-11eb-891d-bd144f1a6492.png">
