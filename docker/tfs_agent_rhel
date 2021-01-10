@@ -1,0 +1,22 @@
+FROM image-registry.openshift-image-registry.svc:5000/openshift/jenkins-agent-nodejs
+
+USER root
+
+#ENV HOME=/home/jenkins 
+
+# Install .NET sdk rpm
+RUN rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
+
+# Install headless Java and .NET sdk
+RUN yum install dotnet-sdk-3.1 -y
+
+# Install SonarQube Scanner as the running user
+RUN dotnet tool install --global dotnet-sonarscanner
+ENV PATH="${PATH}:$HOME/.dotnet/tools"
+
+WORKDIR /azp
+
+COPY ./start.sh .
+RUN chmod +x start.sh
+
+CMD ["./start.sh"]
