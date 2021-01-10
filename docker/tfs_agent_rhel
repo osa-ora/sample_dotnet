@@ -1,18 +1,24 @@
-FROM image-registry.openshift-image-registry.svc:5000/openshift/jenkins-agent-nodejs
+FROM openshift/jenkins-slave-base-centos7
 
 USER root
 
-#ENV HOME=/home/jenkins 
+ENV SONARQUBE_SCANNER_VERSION=4.4.2.1543 \
 
 # Install .NET sdk rpm
 RUN rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
 
 # Install headless Java and .NET sdk
-RUN yum install dotnet-sdk-3.1 -y
+RUN yum install -y centos-release-scl-rh && \
+    INSTALL_PKGS="wget dotnet-sdk-3.1" && \
+    yum install -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
+    rpm -V $INSTALL_PKGS && \
+    yum clean all
+
+WORKDIR /
 
 # Install SonarQube Scanner as the running user
 RUN dotnet tool install --global dotnet-sonarscanner
-ENV PATH="${PATH}:$HOME/.dotnet/tools"
+ENV PATH="${PATH}:~/.dotnet/tools"
 
 WORKDIR /azp
 
