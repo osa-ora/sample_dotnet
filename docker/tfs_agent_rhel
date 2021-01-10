@@ -2,8 +2,6 @@ FROM openshift/jenkins-slave-base-centos7
 
 USER root
 
-ENV SONARQUBE_SCANNER_VERSION=4.4.2.1543 \
-
 # Install .NET sdk rpm
 RUN rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
 
