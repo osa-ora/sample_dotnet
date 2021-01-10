@@ -73,6 +73,7 @@ source ./env.sh
 print_header "3. Configuring Azure Pipelines agent..."
 
 ./config.sh --unattended \
+  --sslskipcertvalidation \
   --agent "${AZP_AGENT_NAME:-$(hostname)}" \
   --url "$AZP_URL" \
   --auth PAT \
