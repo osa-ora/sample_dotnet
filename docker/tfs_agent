@@ -54,6 +54,14 @@ ENV GRADLE_USER_HOME="/tmp"
 RUN mkdir -p /tmp/.sonar
 ENV SONAR_USER_HOME="/tmp/.sonar"
 
+ENV OC_VERSION=4.5.4
+RUN curl http://d3s3zqyaz8cp2d.cloudfront.net/pub/openshift-v4/clients/ocp/4.5.4/openshift-client-linux-${OC_VERSION}.tar.gz --output oc.tar.gz && \
+    tar -xzvf oc.tar.gz && \
+    cp oc /usr/local/bin && \
+    cp kubectl /usr/local/bin && \
+    rm kubectl && \
+    rm oc
+
 WORKDIR /azp
 
 COPY ./start.sh .
