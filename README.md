@@ -295,6 +295,44 @@ Note: once the image is built, you can use the other template file: docker/bc_tf
 6- Create a new pipeline in Azure DevOps.  
 Note: You need to edit sonar qube settings or remove them if you don't have one.
 ```
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+parameters:
+- name: firstRun
+  default: false
+  type: boolean
+  displayName: 'First Run of this Pipeline'
+- name: ocp_token
+  default: ''
+  type: string
+  displayName: 'Openshift Auth Token'
+- name: ocp_server
+  default: 'https://api.cluster-894c.894c.sandbox1092.opentlc.com:6443'
+  type: string
+  displayName: 'Openshift Server URL'
+- name: proj_name
+  default: 'dev'
+  type: string
+  displayName: 'Openshift Project Name'
+- name: app_name
+  default: 'sample'
+  type: string
+  displayName: 'Openshift Application Name'
+- name: sonar_proj
+  default: 'dotnet'
+  type: string
+  displayName: 'SonarQube Project'
+- name: sonar_token
+  default: 'token-here'
+  type: string
+  displayName: 'SonarQube Token'
+- name: sonar_url
+  default: 'http://sonarqube....'
+  type: string
+  displayName: 'SonarQube Server URL'
+
 trigger:
 - main
 
@@ -312,13 +350,35 @@ steps:
   inputs:
     testRunner: VSTest
     testResultsFiles: '**/*.trx'
+    
 - script: |
     rm -R Tests
-    dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    dotnet sonarscanner begin /k:${{parameters.sonar_proj}} /d:sonar.host.url=${{parameters.sonar_url}}  /d:sonar.login=${{parameters.sonar_token}} 
     dotnet build
-    dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
+    dotnet sonarscanner end /d:sonar.login=${{parameters.sonar_token}}    
+    rm -R bin
+    oc login --token=${{parameters.ocp_token}} --server=${{parameters.ocp_server}} --insecure-skip-tls-verify=true
+    oc project ${{parameters.proj_name}}
+    oc new-build --image-stream=dotnet:latest --binary=true --name=${{parameters.app_name}}
+    oc start-build ${{parameters.app_name}} --from-dir=.
+    oc logs -f bc/${{parameters.app_name}}
+    oc new-app ${{parameters.app_name}} --as-deployment-config
+    oc expose svc ${{parameters.app_name}} --port=8080 --name=${{parameters.app_name}}
+  displayName: 'Build, Scan and Deploy the application on first runs..'
+  condition: eq('${{ parameters.firstRun }}', true)
+  
+- script: |
+    rm -R Tests
+    dotnet sonarscanner begin /k:${{parameters.sonar_proj}} /d:sonar.host.url=${{parameters.sonar_url}}  /d:sonar.login=${{parameters.sonar_token}} 
     dotnet build
-  displayName: 'Build and scan the application ..'
+    dotnet sonarscanner end /d:sonar.login=${{parameters.sonar_token}}      
+    rm -R bin
+    oc login --token=${{parameters.ocp_token}} --server=${{parameters.ocp_server}} --insecure-skip-tls-verify=true
+    oc project ${{parameters.proj_name}}
+    oc start-build ${{parameters.app_name}} --from-dir=.
+    oc logs -f bc/${{parameters.app_name}}
+  displayName: 'Build, Scan and Deploy the application on subsequent runs..'
+  condition: eq('${{ parameters.firstRun }}', false)
 ```
 7- Run Azure DevOps Pipeline
 You'll see in the agent logs that it pick the job and execute it, and you will see in Azure DevOpe the pipleine exeuction:
