@@ -23,6 +23,19 @@ parameters:
   default: 'sample'
   type: string
   displayName: 'Openshift Application Name'
+- name: sonar_proj
+  default: 'dotnet'
+  type: string
+  displayName: 'SonarQube Project'
+- name: sonar_token
+  default: 'token-here'
+  type: string
+  displayName: 'SonarQube Token'
+- name: sonar_url
+  default: 'http://sonarqube....'
+  type: string
+  displayName: 'SonarQube Server URL'
+
 trigger:
 - main
 
@@ -42,9 +55,9 @@ steps:
     testResultsFiles: '**/*.trx'
 - script: |
     rm -R Tests
-    #dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    #dotnet sonarscanner begin /k:${{parameters.sonar_proj}} /d:sonar.host.url=${{parameters.sonar_url}}  /d:sonar.login=${{parameters.sonar_token}} 
     #dotnet build
-    #dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
+    #dotnet sonarscanner end /d:sonar.login=${{parameters.sonar_token}}    
     dotnet build
     rm -R bin
     oc login --token=${{parameters.ocp_token}} --server=${{parameters.ocp_server}} --insecure-skip-tls-verify=true
@@ -58,9 +71,9 @@ steps:
   condition: eq('${{ parameters.firstRun }}', true)
 - script: |
     rm -R Tests
-    #dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    #dotnet sonarscanner begin /k:${{parameters.sonar_proj}} /d:sonar.host.url=${{parameters.sonar_url}}  /d:sonar.login=${{parameters.sonar_token}} 
     #dotnet build
-    #dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
+    #dotnet sonarscanner end /d:sonar.login=${{parameters.sonar_token}}      
     dotnet build
     rm -R bin
     oc login --token=${{parameters.ocp_token}} --server=${{parameters.ocp_server}} --insecure-skip-tls-verify=true
