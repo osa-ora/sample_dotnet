@@ -42,11 +42,11 @@ steps:
     testResultsFiles: '**/*.trx'
 - script: |
     rm -R Tests
-    dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    #dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    #dotnet build
+    #dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
     dotnet build
-    dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
-    dotnet build
-    rm -R build
+    rm -R bin
     oc login --token=${{parameters.ocp_token}} --server=${{parameters.ocp_server}}
     oc project ${{parameters.proj_name}}
     oc new-build --image-stream=dotnet:latest --binary=true --name=${{parameters.app_name}}
