@@ -54,5 +54,18 @@ steps:
     oc logs -f bc/${{parameters.app_name}}
     oc new-app ${{parameters.app_name}} --as-deployment-config
     oc expose svc ${{parameters.app_name}} --port=8080 --name=${{parameters.app_name}}
-  displayName: 'Build and scan the application ..'
+  displayName: 'Build, Scan and Deploy the application on first runs..'
   condition: eq('${{ parameters.firstRun }}', true)
+- script: |
+    rm -R Tests
+    #dotnet sonarscanner begin /k:dotnet /d:sonar.host.url=http://sonarqube-a-test2.apps.cluster-c167.c167.sandbox1250.opentlc.com /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45
+    #dotnet build
+    #dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
+    dotnet build
+    rm -R bin
+    oc login --token=${{parameters.ocp_token}} --server=${{parameters.ocp_server}}
+    oc project ${{parameters.proj_name}}
+    oc start-build ${{parameters.app_name}} --from-dir=.
+    oc logs -f bc/${{parameters.app_name}}
+  displayName: 'Build, Scan and Deploy the application on subsequent runs..'
+  condition: eq('${{ parameters.firstRun }}', false)
