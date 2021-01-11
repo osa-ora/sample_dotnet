@@ -47,12 +47,12 @@ steps:
     dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
     dotnet build
     rm -R build
-    oc login --token=${{ocp_toekn}} --server=${{ocp_server}}
-    oc project ${{proj_name}}
-    oc new-build --image-stream=dotnet:latest --binary=true --name=${{app_name}}
-    oc start-build ${{app_name}} --from-dir=.
-    oc logs -f bc/${{app_name}}
-    oc new-app ${{app_name}} --as-deployment-config
-    oc expose svc ${{app_name}} --port=8080 --name=${{app_name}}
+    oc login --token=${{parameters.ocp_toekn}} --server=${{parameters.ocp_server}}
+    oc project ${{parameters.proj_name}}
+    oc new-build --image-stream=dotnet:latest --binary=true --name=${{parameters.app_name}}
+    oc start-build ${{parameters.app_name}} --from-dir=.
+    oc logs -f bc/${{parameters.app_name}}
+    oc new-app ${{parameters.app_name}} --as-deployment-config
+    oc expose svc ${{parameters.app_name}} --port=8080 --name=${{parameters.app_name}}
   displayName: 'Build and scan the application ..'
-  condition: eq('${{ parameters.doThing }}', true)
+  condition: eq('${{ parameters.firstRun }}', true)
