@@ -2,7 +2,27 @@
 # Start with a minimal pipeline that you can customize to build and deploy your code.
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
-
+parameters:
+- name: firstRun
+  default: false
+  type: boolean
+  displayName: 'First Run of this Pipeline'
+- name: ocp_token
+  default: ''
+  type: string
+  displayName: 'Openshift Auth Token'
+- name: ocp_server
+  default: 'https://api.cluster-894c.894c.sandbox1092.opentlc.com:6443'
+  type: string
+  displayName: 'Openshift Server URL'
+- name: proj_name
+  default: 'dev'
+  type: string
+  displayName: 'Openshift Project Name'
+- name: app_name
+  default: 'sample'
+  type: string
+  displayName: 'Openshift Application Name'
 trigger:
 - main
 
@@ -26,4 +46,13 @@ steps:
     dotnet build
     dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
     dotnet build
+    rm -R build
+    oc login --token=${{ocp_toekn}} --server=${{ocp_server}}
+    oc project ${{proj_name}}
+    oc new-build --image-stream=dotnet:latest --binary=true --name=${{app_name}}
+    oc start-build ${{app_name}} --from-dir=.
+    oc logs -f bc/${{app_name}}
+    oc new-app ${{app_name}} --as-deployment-config
+    oc expose svc ${{app_name}} --port=8080 --name=${{app_name}}
   displayName: 'Build and scan the application ..'
+  condition: eq('${{ parameters.doThing }}', true)
