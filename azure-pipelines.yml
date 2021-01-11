@@ -47,7 +47,7 @@ steps:
     dotnet sonarscanner end /d:sonar.login=d8720532d2ba6e13d8f7a831eb41177504f9be45    
     dotnet build
     rm -R build
-    oc login --token=${{parameters.ocp_toekn}} --server=${{parameters.ocp_server}}
+    oc login --token=${{parameters.ocp_token}} --server=${{parameters.ocp_server}}
     oc project ${{parameters.proj_name}}
     oc new-build --image-stream=dotnet:latest --binary=true --name=${{parameters.app_name}}
     oc start-build ${{parameters.app_name}} --from-dir=.
