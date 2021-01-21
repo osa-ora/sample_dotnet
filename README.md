@@ -61,9 +61,12 @@ Make sure to select DotNet here.
 ## 4) Build Jenkins CI/CD using Jenkins File
 
 Now create new pipeline for the project, where we checkout the code, run unit testing, run sonar qube analysis, build the application, get manual approval for deployment and finally deploy it on Openshift.
-Here is the content of the file:
+Here is the content of the file (as in cicd/jenkinsfile)
 
 ```
+// Maintaned by Osama Oransa
+// First execution will fail as parameters won't populated
+// Subsequent runs will succeed if you provide correct parameters
 pipeline {
 	options {
 		// set a timeout of 20 minutes for this pipeline
@@ -73,29 +76,97 @@ pipeline {
     // Using the dotnet builder agent
        label "jenkins-dotnet-slave"
     }
-    stages {
-    stage('Checkout') {
+  stages {
+    stage('Setup Parameters') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                        choice(
+                                choices: ['No', 'Yes'], 
+                                name: 'firstDeployment',
+                                description: 'First Deployment?'
+                            ),
+                        choice(
+                                choices: ['Yes', 'No'], 
+                                name: 'runSonarQube',
+                                description: 'Run Sonar Qube Analysis?'
+                            ),
+                        string(
+                                defaultValue: 'dev', 
+                                name: 'proj_name', 
+                                trim: true,
+                                description: 'Openshift Project Name'
+                            ),
+                        string(
+                                defaultValue: 'dotnet-app', 
+                                name: 'app_name', 
+                                trim: true,
+                                description: 'Dotnet Application Name'
+                            ),
+                        string(
+                                defaultValue: 'https://github.com/osa-ora/sample_dotnet', 
+                                name: 'git_url', 
+                                trim: true,
+                                description: 'Git Repository Location'
+                            ),
+                        string(
+                                defaultValue: 'Tests', 
+                                name: 'unit_test_proj', 
+                                trim: true,
+                                description: 'Unit Test Project'
+                            ),
+                        string(
+                                defaultValue: 'http://sonarqube-cicd.apps.cluster-894c.894c.sandbox1092.opentlc.com', 
+                                name: 'sonarqube_url', 
+                                trim: true,
+                                description: 'Sonar Qube URL'
+                            ),
+                        string(
+                                defaultValue: 'dotnet', 
+                                name: 'sonarqube_proj', 
+                                trim: true,
+                                description: 'Sonar Qube Project Name'
+                            ),
+                        password(
+                                defaultValue: '7f1f08943b733b3e227e770dd0d18a218298f25f', 
+                                name: 'sonarqube_token', 
+                                description: 'Sonar Qube Token'
+                            )
+                        ])
+                    ])
+                }
+            }
+    }
+    stage('Code Checkout') {
       steps {
         git branch: 'main', url: '${git_url}'
         sh "ls -l"
-        sh "oc version"
       }
     }
-    stage('Unit Testing') {
+    stage('Unit Testing & Code Coverage') {
       steps {
-        sh "dotnet test ${unit_tests_folder} --logger trx"
-        sh "ls -l ${unit_tests_folder}"
-        sh "ls -l ${unit_tests_folder}/TestResults"
-        sh "rm -R ${unit_tests_folder}"
-        sh "ls -l"
+        sh "dotnet test ${unit_test_proj} --logger trx"
+        archiveArtifacts '${unit_test_proj}/TestResults/**/*.*'
+        sh "rm -R ${unit_test_proj}"
       }
     }
-    stage('Sonar Qube') {
-      steps {
-        sh "dotnet sonarscanner begin /k:\"${sonarqube_proj}\" /d:sonar.host.url=\"${sonarqube_url}\" /d:sonar.login=\"${sonarqube_token}\""
-        sh "dotnet build"
-        sh "dotnet sonarscanner end /d:sonar.login=\"${sonarqube_token}\""
-      }
+    stage('Code Scanning by Sonar Qube') {
+        when {
+            expression { runSonarQube == "Yes" }
+        }
+        steps {
+            sh "dotnet sonarscanner begin /k:\"${sonarqube_proj}\" /d:sonar.host.url=\"${sonarqube_url}\" /d:sonar.login=\"${sonarqube_token}\""
+            sh "dotnet build"
+            sh "dotnet sonarscanner end /d:sonar.login=\"${sonarqube_token}\""        
+        }
+    }
+    stage('Build Deployment Package'){
+        steps{
+            sh "dotnet build"
+            archiveArtifacts 'bin/**/*.*'
+            sh "rm -R bin"
+        }
     }
     stage('Deployment Approval') {
         steps {
@@ -104,17 +175,33 @@ pipeline {
             }
         }
     }
-    stage('Deploy To Openshift') {
-      steps {
-        sh "oc project ${proj_name}"
-        sh "oc start-build ${app_name} --from-dir=."
-        sh "oc logs -f bc/${app_name}"
-      }
+    stage('Initial Deploy To Openshift') {
+        when {
+            expression { firstDeployment == "Yes" }
+        }
+        steps {
+            sh "oc project ${proj_name}"
+            sh "oc new-build --image-stream=dotnet:latest --binary=true --name=${app_name}"
+            sh "oc start-build ${app_name} --from-dir=."
+            sh "oc logs -f bc/${app_name}"
+            sh "oc new-app ${app_name} --as-deployment-config"
+            sh "oc expose svc ${app_name} --port=8080 --name=${app_name}"
+        }
+    }
+    stage('Incremental Deploy To Openshift') {
+        when {
+            expression { firstDeployment == "No" }
+        }
+        steps {
+            sh "oc project ${proj_name}"
+            sh "oc start-build ${app_name} --from-dir=."
+            sh "oc logs -f bc/${app_name}"
+        }
     }
   }
 } // pipeline
 ```
-As you can see this pipeline pick the gradle slave image that we built, note the label must match what we configurd before:
+As you can see this pipeline pick the dotnet slave image that we built, note the label must match what we configurd before:
 ```
 agent {
     // Using the dotnet builder agent
@@ -122,31 +209,10 @@ agent {
     }
 ```
 
-The pipeline uses many parameters:
-```
-- String parameter: proj_name //this is Openshift project for the application
-- String parameter: app_name //this is the application name
-- String parameter: git_url //this is the git url of our project, default is https://github.com/osa-ora/sample_dotnet
-- String parameter: sonarqube_url: //this is the sonarqube url in case it is used for code scanning
-- String parameter: sonarqube_token //this is the token 
-- String parameter: sonarqube_proj // the project name in sonarqube
-```
+The pipeline uses many parameters in 1st execution, it will fail then in subsequent executions it will prepare the parameters:
 
-<img width="1270" alt="Screen Shot 2021-01-03 at 15 47 50" src="https://user-images.githubusercontent.com/18471537/103480534-92be7a80-4ddd-11eb-96b2-23007d19c242.png">
+<img width="1294" alt="Screen Shot 2021-01-20 at 22 15 00" src="https://user-images.githubusercontent.com/18471537/105334042-17cbd100-5bdf-11eb-9066-a08691cc66c7.png">
 
-The project assume that you already build and deployed the application before, so we need to have a Jenkins freestyle project where we initally execute the following commands in Jenkins after checkout the code:
-```
-rm -R Tests
-oc project ${proj_name}
-oc new-build --image-stream=dotnet:latest --binary=true --name=${app_name}
-oc start-build ${app_name} --from-dir=.
-oc logs -f bc/${app_name}
-oc new-app ${app_name} --as-deployment-config
-oc expose svc ${app_name} --port=8080 --name=${app_name}
-```
-This will make sure our project initally deployed and ready for our CI/CD configurations, where proj_name and app_name is Openshift project and application name respectively.
-
-<img width="906" alt="Screen Shot 2021-01-03 at 18 51 22" src="https://user-images.githubusercontent.com/18471537/103484483-c1494f00-4df7-11eb-9841-bdaa8537f225.png">
 
 ## 5) Deployment Across Environments
 
@@ -176,7 +242,7 @@ Add more stages to the pipleine scripts like:
       }
     }
 ```
-
+You can use oc login command with different cluster to deploy the application into different clusters.
 Also you can use Openshift plugin and configure different Openshift cluster to automated the deployments across many environments:
 
 ```
@@ -226,25 +292,66 @@ oc describe secret skopeo-token -n cicd
 You can also use any user with privilage to do this.  
 5. Run Jenkins pipleline in that Skopeo slave to execute the copy command:
 ```
+// Maintaned by Osama Oransa
+// First execution will fail as parameters won't populated
+// Subsequent runs will succeed if you provide correct parameters
 pipeline {
     agent {
        // Using the skopeo agent
        label "jenkins-slave-skopeo"
     }
     stages {
-      stage('Copy Image To Quay') {
+      stage('Setup Parameters') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                        choice(
+                                choices: ['To Quay', 'To Openshift'], 
+                                name: 'copyDirection',
+                                description: 'Copy Container to'
+                            ),
+                        string(
+                                defaultValue: 'ooransa/tfs-agent-java8:latest', 
+                                name: 'quay_repo', 
+                                trim: true,
+                                description: 'Quay Repository'
+                            ),
+                        string(
+                                defaultValue: 'ooransa+test:token_here', 
+                                name: 'quay_id', 
+                                trim: true,
+                                description: 'Quay Id (user/token)'
+                            ),
+                        string(
+                                defaultValue: 'agent/newimage:latest', 
+                                name: 'ocp_img_name', 
+                                trim: true,
+                                description: 'Openshift Image Name (project/image-steam:tag'
+                            ),
+                        string(
+                                defaultValue: 'skopeo:token_here', 
+                                name: 'ocp_id', 
+                                trim: true,
+                                description: 'Openshift Access Token (user:token)'
+                            )
+                        ])
+                    ])
+                }
+            }
+    }
+      stage('Copy Image From Openshift To Quay') {
+        when {
+            expression { copyDirection == "To Quay" }
+        }
         steps {
           sh "skopeo copy docker://image-registry.openshift-image-registry.svc:5000/${ocp_img_name} docker://quay.io/${quay_repo} --src-tls-verify=false --src-creds='${ocp_id}' --dest-creds ${quay_id}"
         }
       }
-      stage('Approval to Proceed?'){
-        steps {
-            timeout(time: 5, unit: 'MINUTES') {
-                input message: 'Proceed with Update Image?', ok: 'Approve Update'
-            }
+      stage('Copy Image From Quay To Openshift') {
+        when {
+            expression { copyDirection == "To Openshift" }
         }
-      }
-      stage('Copy Image From Quay') {
         steps {
           sh "skopeo copy docker://quay.io/${quay_repo} docker://image-registry.openshift-image-registry.svc:5000/${ocp_img_name} --dest-tls-verify=false --format=v2s2 --src-creds='${quay_id}' --dest-creds ${ocp_id}"
         }
@@ -252,14 +359,9 @@ pipeline {
     }
 }
 ```
-Where the following parameters are supplie for example:
-```
-quay_repo is the quay repository 
-quay_id is the robot account:token granted access to Quay repository
-ocp_img_name is the name of the image in OCP
-ocp_id is username:token of user with privilages to pull/push image in OCP
-```
-<img width="425" alt="Screen Shot 2021-01-07 at 16 18 20" src="https://user-images.githubusercontent.com/18471537/103903345-7768ad80-5104-11eb-9939-4cd488dcccee.png">
+Where the parameters need to be supplied as per the Openshift and Quay configurations
+
+<img width="523" alt="Screen Shot 2021-01-21 at 12 59 57" src="https://user-images.githubusercontent.com/18471537/105342131-a55fee80-5be8-11eb-8ae2-e4da79d18186.png">
 
 Note that I used the flag srv-tls-verify=false and dest-tls-verity=false with OCP as in my environment it uses self signed certificate otherwise it will fail.  
 Note also in case you encounter any issues in format versions you can use the flag "--format=v2s2"  
