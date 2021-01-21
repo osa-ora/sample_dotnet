@@ -1,0 +1,136 @@
+// Maintaned by Osama Oransa
+// First execution will fail as parameters won't populated
+// Subsequent runs will succeed if you provide correct parameters
+pipeline {
+	options {
+		// set a timeout of 20 minutes for this pipeline
+		timeout(time: 20, unit: 'MINUTES')
+	}
+    agent {
+    // Using the dotnet builder agent
+       label "jenkins-dotnet-slave"
+    }
+  stages {
+    stage('Setup Parameters') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                        choice(
+                                choices: ['No', 'Yes'], 
+                                name: 'firstDeployment',
+                                description: 'First Deployment?'
+                            ),
+                        choice(
+                                choices: ['Yes', 'No'], 
+                                name: 'runSonarQube',
+                                description: 'Run Sonar Qube Analysis?'
+                            ),
+                        string(
+                                defaultValue: 'dev', 
+                                name: 'proj_name', 
+                                trim: true,
+                                description: 'Openshift Project Name'
+                            ),
+                        string(
+                                defaultValue: 'dotnet-app', 
+                                name: 'app_name', 
+                                trim: true,
+                                description: 'Dotnet Application Name'
+                            ),
+                        string(
+                                defaultValue: 'https://github.com/osa-ora/sample_dotnet', 
+                                name: 'git_url', 
+                                trim: true,
+                                description: 'Git Repository Location'
+                            ),
+                        string(
+                                defaultValue: 'Tests', 
+                                name: 'unit_test_proj', 
+                                trim: true,
+                                description: 'Unit Test Project'
+                            ),
+                        string(
+                                defaultValue: 'http://sonarqube-cicd.apps.cluster-894c.894c.sandbox1092.opentlc.com', 
+                                name: 'sonarqube_url', 
+                                trim: true,
+                                description: 'Sonar Qube URL'
+                            ),
+                        string(
+                                defaultValue: 'dotnet', 
+                                name: 'sonarqube_proj', 
+                                trim: true,
+                                description: 'Sonar Qube Project Name'
+                            ),
+                        password(
+                                defaultValue: '7f1f08943b733b3e227e770dd0d18a218298f25f', 
+                                name: 'sonarqube_token', 
+                                description: 'Sonar Qube Token'
+                            )
+                        ])
+                    ])
+                }
+            }
+    }
+    stage('Code Checkout') {
+      steps {
+        git branch: 'main', url: '${git_url}'
+        sh "ls -l"
+      }
+    }
+    stage('Unit Testing & Code Coverage') {
+      steps {
+        sh "dotnet test ${unit_test_proj} --logger trx"
+        archiveArtifacts '${unit_test_proj}/TestResults/**/*.*'
+        sh "rm -R ${unit_test_proj}"
+      }
+    }
+    stage('Code Scanning by Sonar Qube') {
+        when {
+            expression { runSonarQube == "Yes" }
+        }
+        steps {
+            sh "dotnet sonarscanner begin /k:\"${sonarqube_proj}\" /d:sonar.host.url=\"${sonarqube_url}\" /d:sonar.login=\"${sonarqube_token}\""
+            sh "dotnet build"
+            sh "dotnet sonarscanner end /d:sonar.login=\"${sonarqube_token}\""        
+        }
+    }
+    stage('Build Deployment Package'){
+        steps{
+            sh "dotnet build"
+            archiveArtifacts 'bin/**/*.*'
+            sh "rm -R bin"
+        }
+    }
+    stage('Deployment Approval') {
+        steps {
+            timeout(time: 5, unit: 'MINUTES') {
+                input message: 'Proceed with Application Deployment?', ok: 'Approve Deployment'
+            }
+        }
+    }
+    stage('Initial Deploy To Openshift') {
+        when {
+            expression { firstDeployment == "Yes" }
+        }
+        steps {
+            sh "oc project ${proj_name}"
+            sh "oc new-build --image-stream=dotnet:latest --binary=true --name=${app_name}"
+            sh "oc start-build ${app_name} --from-dir=."
+            sh "oc logs -f bc/${app_name}"
+            sh "oc new-app ${app_name} --as-deployment-config"
+            sh "oc expose svc ${app_name} --port=8080 --name=${app_name}"
+        }
+    }
+    stage('Incremental Deploy To Openshift') {
+        when {
+            expression { firstDeployment == "No" }
+        }
+        steps {
+            sh "oc project ${proj_name}"
+            sh "oc start-build ${app_name} --from-dir=."
+            sh "oc logs -f bc/${app_name}"
+        }
+    }
+  }
+} // pipeline
